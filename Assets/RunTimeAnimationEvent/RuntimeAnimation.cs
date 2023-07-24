@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEditor.Animations;
 using UnityEngine;
 
@@ -30,13 +31,25 @@ namespace RunTimeAnimationEvent
         {
             if (animator.gameObject.TryGetComponent(out AnimationEventRunTime runtimeAnimationEvent))
             {
-                runtimeAnimationEvent.AddEvent(animationData);
+                runtimeAnimationEvent.AddEvent(ref animationData);
             }
             else
             {
                 runtimeAnimationEvent = animator.gameObject.AddComponent<AnimationEventRunTime>();
-                runtimeAnimationEvent.AddEvent(animationData);
+                runtimeAnimationEvent.AddEvent(ref animationData);
             }
+        }
+        
+        public static void RemoveAnimationEvent(this Animator animator,Action action,float time)
+        {
+            var animationData = new AnimationData(null, action, time);
+            if (animator.gameObject.TryGetComponent(out AnimationEventRunTime runtimeAnimationEvent))
+            {
+                runtimeAnimationEvent.RemoveEvent(animationData);
+                return;
+            }
+            
+            Debug.LogWarning("This event does not exist");
         }
 
         public static void AddAnimationEvent(this Animator animator, string clipName, float time, Action action,
