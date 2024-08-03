@@ -17,10 +17,10 @@ namespace RunTimeAnimationEvent.Editor
         {
             if (Application.isPlaying)
             {
-                for (var i = 0; i < _animationEventList.arraySize; i++)
+                for (int i = 0; i < _animationEventList.arraySize; i++)
                 {
                     var elementProperty = _animationEventList.GetArrayElementAtIndex(i);
-                    var stringValueProperty = elementProperty.FindPropertyRelative("ActionName");
+                    var stringValueProperty = elementProperty.FindPropertyRelative("actionName");
                     var stringValue = stringValueProperty.stringValue;
                 
                     EditorGUILayout.LabelField($"AnimationEvent: {stringValue} || Time: {elementProperty.FindPropertyRelative("eventTime").floatValue}");

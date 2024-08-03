@@ -1,6 +1,5 @@
 using System;
-using System.Collections.Generic;
-using UnityEditor.Animations;
+using System.Linq;
 using UnityEngine;
 
 namespace RunTimeAnimationEvent
@@ -39,8 +38,8 @@ namespace RunTimeAnimationEvent
                 runtimeAnimationEvent.AddEvent(ref animationData);
             }
         }
-        
-        public static void RemoveAnimationEvent(this Animator animator,Action action,float time)
+
+        public static void RemoveAnimationEvent(this Animator animator, Action action, float time)
         {
             var animationData = new AnimationData(null, action, time);
             if (animator.gameObject.TryGetComponent(out AnimationEventRunTime runtimeAnimationEvent))
@@ -48,44 +47,56 @@ namespace RunTimeAnimationEvent
                 runtimeAnimationEvent.RemoveEvent(animationData);
                 return;
             }
-            
+
             Debug.LogWarning("This event does not exist");
         }
 
-        public static void AddAnimationEvent(this Animator animator, string clipName, float time, Action action,
-            ClipSearchType clipSearchType = ClipSearchType.ByClipName)
+        public static void AddAnimationEventByStateName(this Animator animator, string stateName, float time, Action action,
+                                                        string clipName = null,int animationLayerIndex = 0)
         {
-            var clip = clipSearchType switch
-            {
-                ClipSearchType.ByClipName => GetClip(animator, clipName),
-                ClipSearchType.ByStateName => GetClipByState(animator, clipName),
+            var clip = GetClipByState(animator, stateName, animationLayerIndex,clipName);
+            var animationData = new AnimationData(clip, action, time);
 
-                _ => throw new ArgumentOutOfRangeException(nameof(clipSearchType), clipSearchType, null)
-            };
-
+            AddRunTimeAnimationEventComponent(animator, ref animationData);
+        }
+        
+        public static void AddAnimationEvent(this Animator animator, string clipName, float time, Action action)
+        {
+            var clip = GetClip(animator, clipName);
             var animationData = new AnimationData(clip, action, time);
 
             AddRunTimeAnimationEventComponent(animator, ref animationData);
         }
 
         public static void AddAnimationEventNormalizedTime(this Animator animator, string clipName,
-            float normalizedTime, Action action,
-            ClipSearchType clipSearchType = ClipSearchType.ByClipName)
+                                                           float normalizedTime, Action action)
         {
             if (normalizedTime < 0 || normalizedTime > 1)
             {
                 Debug.LogError("Normalized time must be between 0 and 1");
                 return;
             }
-            
-            var clip = clipSearchType switch
+
+            var clip = GetClip(animator, clipName);
+            var time = normalizedTime * clip.length;
+
+            var animationData = new AnimationData(clip, action, time);
+
+            AddRunTimeAnimationEventComponent(animator, ref animationData);
+        }
+        
+        
+        public static void AddAnimationEventNormalizedTimeByStateName(this Animator animator, string stateName,
+                                                                      float normalizedTime, Action action,
+                                                                      string clipName = null,int animationLayerIndex = 0)
+        {
+            if (normalizedTime < 0 || normalizedTime > 1)
             {
-                ClipSearchType.ByClipName => GetClip(animator, clipName),
-                ClipSearchType.ByStateName => GetClipByState(animator, clipName),
+                Debug.LogError("Normalized time must be between 0 and 1");
+                return;
+            }
 
-                _ => throw new ArgumentOutOfRangeException(nameof(clipSearchType), clipSearchType, null)
-            };
-
+            var clip = GetClipByState(animator, stateName, animationLayerIndex,clipName);
             var time = normalizedTime * clip.length;
 
             var animationData = new AnimationData(clip, action, time);
@@ -94,7 +105,8 @@ namespace RunTimeAnimationEvent
         }
 
 
-        public static AnimationClip GetClip(this Animator animator, string clipName)
+
+        private static AnimationClip GetClip(this Animator animator, string clipName)
         {
             var clips = animator.runtimeAnimatorController.animationClips;
             var clip = Array.Find(clips, c => c.name.Equals(clipName));
@@ -104,31 +116,36 @@ namespace RunTimeAnimationEvent
             return null;
         }
 
-        public static AnimationClip GetClipByState(this Animator animator, string clipName)
+        private static AnimationClip GetClipByState(this Animator animator, string stateName, int animationLayerIndex = 0, string targetClipName = null)
         {
-            var runtimeController = animator.runtimeAnimatorController;
+            var stateInfo = animator.GetCurrentAnimatorStateInfo(animationLayerIndex);
 
-            if (runtimeController != null)
+            if (targetClipName == null && stateInfo.IsName(stateName))
             {
-                var animatorController = runtimeController as AnimatorController;
-                if (animatorController == null) return null;
-
-                foreach (var layer in animatorController.layers)
+                var clips = animator.runtimeAnimatorController.animationClips;
+                int count = clips.ToList().FindAll(c => c.name == stateName).Count;
+                
+                if (count > 1)
                 {
-                    foreach (var state in layer.stateMachine.states)
-                    {
-                        if (state.state.name != clipName) continue;
-
-                        var clip = state.state.motion as AnimationClip;
-
-                        if (clip == null) continue;
-
-                        return clip;
-                    }
+                    Debug.LogWarning($"Found {count} clips with name {stateName}");
                 }
             }
+            
+            if (stateInfo.IsName(stateName))
+            {
+                var clips = animator.runtimeAnimatorController.animationClips;
 
-            Debug.LogError("State not found: " + clipName);
+                foreach (var clip in clips)
+                {
+                    if (targetClipName == null)
+                        return clip;
+                    
+                    if (clip.name == targetClipName)
+                        return clip;
+                }
+            }
+            
+            Debug.LogError($"Not fount state with name {stateName}");
             return null;
         }
     }

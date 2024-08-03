@@ -12,8 +12,14 @@ public class TestCube : MonoBehaviour
     private IEnumerator Start()
     {
         _animator.AddAnimationEvent("Move",0.15f,Test);
-        _animator.AddAnimationEvent("MoveTest",1f,TestTwo,ClipSearchType.ByStateName);
+        _animator.AddAnimationEventByStateName("MoveTest",1f,TestTwo);
         _animator.AddAnimationEventNormalizedTime("Move",0.5f,TestThree);
+        
+        _animator.AddAnimationEventNormalizedTimeByStateName("MoveTest",0.5f,()=>
+        {
+            Debug.Log("Test NormalizedTime ClipSearchType.ByStateName");
+        });
+        
         _animator.AddAnimationEvent("Move",0.3f,TestStatic);
         yield return new WaitForSeconds(3f);
         _animator.RemoveAnimationEvent(Test,0.15f);
@@ -26,16 +32,16 @@ public class TestCube : MonoBehaviour
     
     private void TestTwo()
     {
-        Debug.Log("TestTwo");
+        Debug.Log("Test ClipSearchType.ByStateName");
     }
     
     private void TestThree()
     {
-        Debug.Log("TestThree");
+        Debug.Log("Test NormalizedTime");
     }
 
     private static void TestStatic()
     {
-        Debug.Log("TestFour");
+        Debug.Log("Test Static Event");
     }
 }
