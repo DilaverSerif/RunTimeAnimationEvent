@@ -12,7 +12,7 @@ namespace RunTimeAnimationEvent
 
     public static class RuntimeAnimation
     {
-        public struct AnimationData
+        private struct AnimationData
         {
             public readonly AnimationClip Clip;
             public readonly Action Action;
@@ -135,6 +135,14 @@ namespace RunTimeAnimationEvent
             {
                 var clips = animator.runtimeAnimatorController.animationClips;
 
+                // If targetClipName is null and the state is active:
+                // This method iterates through all clips in the animator controller.
+                // If multiple clips share the same name as stateName (and targetClipName is null),
+                // a warning is logged. The method will return the first clip encountered that is
+                // associated with the current state. The order of clips in
+                // runtimeAnimatorController.animationClips might affect which one is returned
+                // in such ambiguous scenarios.
+                // If a specific clip is needed, providing targetClipName is recommended.
                 foreach (var clip in clips)
                 {
                     if (targetClipName == null)

@@ -50,12 +50,13 @@ namespace RunTimeAnimationEvent
         
         public void RemoveEvent(RuntimeAnimation.AnimationData data)
         {
-            foreach (var animationStruct in animationStructs)
+            for (int i = animationStructs.Count - 1; i >= 0; i--)
             {
+                var animationStruct = animationStructs[i];
                 if (animationStruct.actionName.Equals(data.Action.Method.Name) &&
-                    Math.Abs(animationStruct.eventTime - data.Time) < 0.01f)
+                    Mathf.Approximately(animationStruct.eventTime, data.Time))
                 {
-                    animationStructs.Remove(animationStruct);
+                    animationStructs.RemoveAt(i);
                     return;
                 }
             }
@@ -68,7 +69,7 @@ namespace RunTimeAnimationEvent
         {
             foreach (var animationStruct in animationStructs)
             {
-                if (!(Math.Abs(animationStruct.eventTime - time) < 0.01f)) 
+                if (!Mathf.Approximately(animationStruct.eventTime, time)) 
                     continue;
                 
                 animationStruct.InvokeAction();
